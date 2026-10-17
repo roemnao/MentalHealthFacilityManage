@@ -24,3 +24,7 @@ typedef struct TempPatient{
 }TempPatient;
 Patient hospitalData[MAX_PATIENT];
 int patientCount = 0;
+int main(){
+
+    return 0;
+}
