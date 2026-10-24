@@ -59,9 +59,6 @@ int createNewPatient(Patient p) {
     if (patientCount >= MAX_PATIENT){
         return 1;
     }
-    if (atoi(p.id) <= 0 || atoi(p.birth) <= 0 || atof(p.fee) < 0){
-        return 1;
-    }
     hospitalData[patientCount++] = p;
     return 0;
 }
