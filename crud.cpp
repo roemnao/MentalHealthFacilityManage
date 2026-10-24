@@ -19,7 +19,6 @@ typedef struct Patient Patient;
 Patient hospitalData[MAX_PATIENT];
 int patientCount = 0;
 
-// ==========================================
 int importFromFile(const char *fileName) {
     FILE *f = fopen(fileName, "r");
     if (!f) return 1;
@@ -39,7 +38,6 @@ int importFromFile(const char *fileName) {
     return 0;
 }
 
-// ==========================================
 int exportToFile(const char *fileName) {
     FILE *f = fopen(fileName, "w");
     if (!f) return 1;
@@ -54,7 +52,6 @@ int exportToFile(const char *fileName) {
     return 0;
 }
 
-// ==========================================
 int createNewPatient(Patient p) {
     if (patientCount >= MAX_PATIENT){
         return 1;
@@ -63,12 +60,10 @@ int createNewPatient(Patient p) {
     return 0;
 }
 
-// ==========================================
 void printHeader() {
     printf("%-15s|%-20s|%-10s|%-15s|%-15s|%-12s|%-12s\n", "ID","TEN","NAM SINH","TRIEU CHUNG","BAC SI","CHI PHI","NGAY");
 }
 
-// ==========================================
 int readItemByID(const char *id) {
     for (int i = 0; i < patientCount; i++) {
         if (strcmp(hospitalData[i].id, id) == 0) {
@@ -84,7 +79,6 @@ int readItemByID(const char *id) {
     return 1;
 }
 
-// ==========================================
 int readDataBase() {
     if (patientCount == 0){ 
         return 1;
@@ -100,7 +94,6 @@ int readDataBase() {
     return 0;
 }
 
-// ==========================================
 int updatePatientInfo(const char *id, char *typeChange, char *newVal) {
     for (int i = 0; i < patientCount; i++) {
 if (strcmp(hospitalData[i].id, id) == 0) {
@@ -142,7 +135,6 @@ if (strcmp(hospitalData[i].id, id) == 0) {
     return 1;
 }
 
-// ==========================================
 int deletePatient(const char *id) {
     for (int i = 0; i < patientCount; i++) {
         if (strcmp(hospitalData[i].id, id) == 0) {
@@ -155,7 +147,6 @@ int deletePatient(const char *id) {
     return 1;
 }
 
-// ==========================================
 void inputOnePatient(Patient *p) {
     printf("Nhap ID: "); 
     scanf("%s", p->id);
@@ -179,7 +170,6 @@ void inputOnePatient(Patient *p) {
     scanf("%s", p->date);
 }
 
-// ==========================================
 int main() {
     int choice, field;
     char id[15], typeChange[2], newVal[250];
