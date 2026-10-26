@@ -25,7 +25,7 @@ int patientCount = 0;
 
 int isduplicateid(int id){
 	for (int i = 0; i < patientCount;i++){
-		if(hospitalData[i].id == id){
+		if(atoi(hospitalData[i].id) == id){
 			return 1;
 		}
 	}
@@ -375,6 +375,30 @@ int main(){
 
             case 4:
                 inputOnePatient(&p);
+			    if (!validateid(p.id)) {
+			        printf("Loi: ID khong hop le hoac bi trung!\n");
+			        break;
+			    }
+			    if (!validatename(p.name)) {
+			        printf("Loi: Ten khong hop le!\n");
+			        break;
+			    }
+			    if (!validatebirth(p.birth)) {
+			        printf("Loi: Nam sinh khong hop le!\n");
+			        break;
+			    }
+			    if (!validateDoctor(p.doctor)) {
+			        printf("Loi: Ten bac si khong hop le!\n");
+			        break;
+			    }
+			    if (!validateHospitalFee(atoi(p.fee))) {
+			        printf("Loi: Vien phi khong hop le!\n");
+			        break;
+			    }
+			    if (!validateDate(p.date)) {
+			        printf("Loi: Ngay kham khong hop le!\n");
+			        break;
+			    }
                 if (createNewPatient(p) == 0){
                     printf("THEM THANH CONG!\n");}
                 else{
@@ -389,11 +413,24 @@ int main(){
                 scanf("%s", typeChange);
                 printf("Nhap gia tri moi: ");
                 scanf(" %[^\n]", newVal);
+				int isValid = 1;
+			    switch (tolower(typeChange[0])) {
+			        case 'i': isValid = validateid(newVal); break;
+			        case 'n': isValid = validatename(newVal); break;
+			        case 'b': isValid = validatebirth(newVal); break;
+			        case 'd': isValid = validateDoctor(newVal); break;
+			        case 'f': isValid = validateHospitalFee(atoi(newVal)); break;
+			        case 't': isValid = validateDate(newVal); break;
+			    }
+				if (!isValid) {
+				        printf("Loi: Gia tri moi khong hop le!\n");
+				break;
+				    }
                 if (updatePatientInfo(id, typeChange, newVal) == 0){
                     printf("CAP NHAT THANH CONG!\n");}
                 else{
                     printf("Khong tim thay!\n");}
-                break;
+            	break;
 
             case 6:
                 printf("Nhap ID can xoa: ");
