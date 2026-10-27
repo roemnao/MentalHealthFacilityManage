@@ -176,14 +176,13 @@ int importFromFile(char *fileName) {
     strcpy(tmp, fileName);
 
     sprintf(tmp,"%s.txt",tmp);
-    printf("%s", tmp);
     
 
     FILE *f = fopen("tmp", "r");
 
     if (!f){
-     return 1;
-     }
+        return 1;
+    }
 
     Patient p;
 
