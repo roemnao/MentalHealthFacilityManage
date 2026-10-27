@@ -179,10 +179,9 @@ int importFromFile(char *fileName) {
     printf("%s", tmp);
     
 
-    FILE *f = fopen("patientList.txt", "r");
+    FILE *f = fopen("tmp", "r");
 
     if (!f){
-    printf("debug");
      return 1;
      }
 
@@ -199,9 +198,7 @@ int importFromFile(char *fileName) {
         }
 
         else{
-
             break;
-
         }
 
     }
