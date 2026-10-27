@@ -178,7 +178,7 @@ int importFromFile(char *fileName) {
     sprintf(tmp,"%s.txt",tmp);
     
 
-    FILE *f = fopen("tmp", "r");
+    FILE *f = fopen(tmp, "r");
 
     if (!f){
         return 1;
