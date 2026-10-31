@@ -1,3 +1,4 @@
+#define __USE_MINGW_ANSI_STDIO 1
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -7,6 +8,7 @@
 #define MAX_PATIENT 10000
 char error[][2][MAXSTRING] = {{"100","File khong ton tai"},{"101","File khong hop le"},{"102","So benh nhan vuot gioi han luu tru"},
                             {"200","Du lieu nhap vao bi trong"},{"201","Du lieu nhap vao khong hop le"},{"202","Danh sach benh nhan trong"},
+                            {"301","Ngay sinh sau ngay kham"},
                             {"404","Khong tim thay benh nhan trong danh sach"}};
 int errorCout = sizeof(error) / sizeof(error[0]);
 typedef struct Patient {
@@ -27,11 +29,10 @@ typedef struct Date {
 Patient hospitalData[MAX_PATIENT];
 int patientCount = 0;
 
-//khoi tao truoc
 void printError(int errorID);
 void printHeader();
 Date splitDate(char *date);
-//validation
+void normalizeDate(char *date);
 int isduplicateid(char*id){
 	for (int i = 0; i < patientCount;i++){
 		if(strcmp(hospitalData[i].id, id) == 0){
@@ -47,13 +48,9 @@ int validateID(char*id){
 		return 0;
 	}
 	for (int i = 0; i < len; i++){
-		if (!isdigit(id[i])){
+		if (!isdigit((unsigned char)id[i])){
 			return 0;
 		}
-	}
-	char *cvtid = id;
-	if (isduplicateid(cvtid)){
-		return 0;
 	}
 	return 1;
 }
@@ -63,7 +60,7 @@ int validateName(char*name){
 		return 0;
 	}
 	for (int i = 0 ; i< len;i++){
-		if (!isalpha(name[i]) && name[i]!= ' '){
+		if (!isalpha((unsigned char)name[i]) && name[i]!= ' '){
 			return 0;
 		}
 	}
@@ -91,60 +88,41 @@ int cmpDate(Date bigger, Date smaller){
     return 0;
 }
 int validateDate(char *date){
-	int len = strlen(date);
-	if(len != 10){
-		return 0;
-	}
-		if (date[2]!='/'||date[5]!='/'){
-			return 0;
-		}
-		for (int i = 0; i< 10 ; i++){
-			if (i !=2 && i != 5){
-				if(!isdigit(date[i])){
-					return 0;
-				}
-			}
-		}
-		int d = (date[0]-'0')*10 + (date[1]-'0');
-		int m = (date[3]-'0')*10 + (date[4]-'0');
-        int y = (date[6] - '0') * 1000 + (date[7] - '0') * 100 + (date[8] - '0') * 10 + (date[9] - '0');
-		if (y<1900 || m<1 ||m>12||d<1||d>31){
-			return 0;
-		}
-		if(m==4||m==6||m==9||m==11){
-			if (d>30){
-				return 0;
-			}
-		}
-		 if (m == 2) {
-        int isLeap = (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0);
-        if (isLeap && d > 29) {
-            return 0;
-        }
-        if (!isLeap && d > 28) {
-            return 0;
-        }
+    int len = strlen(date);
+    int slashes = 0;
+    for (int i = 0; i < len; i++){
+        if (date[i] == '/') slashes++;
+        else if (!isdigit((unsigned char)date[i])) return 0;
     }
-    time_t t = time(NULL);
-    struct tm *current_time = localtime(&t);
-    int current_d = current_time->tm_mday;
-    int current_m = current_time->tm_mon + 1;
-    int current_y = current_time->tm_year + 1900;
-    
+    if (len < 8 || len > 10 || slashes != 2) return 0;
+    int d, m, y, n = 0;
+    if (sscanf(date, "%d/%d/%d%n", &d, &m, &y, &n) != 3 || date[n] != '\0') return 0;
+    if (strlen(strrchr(date, '/') + 1) != 4) return 0;
+    if (y < 1900 || m < 1 || m > 12 || d < 1 || d > 31){
+        return 0;
+    }
+    if (m == 4 || m == 6 || m == 9 || m == 11){
+        if (d > 30) return 0;
+    }
+    if (m == 2) {
+        int isLeap = (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0);
+        if (isLeap && d > 29) return 0;
+        if (!isLeap && d > 28) return 0;
+    }
     return 1;
 }
 
 int validateFee(char *fee){
-    for(int i = 0; i < strlen(fee); i++){
-        if(!isdigit(fee[i])){
+    for(size_t i = 0; i < strlen(fee); i++){
+        if(!isdigit((unsigned char)fee[i])){
             return 0;
         }
     }   
     return 1; 
 }
 int validateSymptom(char *symptom){
-    for(int i = 0; i < strlen(symptom); i++){
-        if(!isdigit(symptom[i]) && !isalpha(symptom[i]) && !(symptom[i] == ' ')){
+    for(size_t i = 0; i < strlen(symptom); i++){
+        if(!isdigit((unsigned char)symptom[i]) && !isalpha((unsigned char)symptom[i]) && !(symptom[i] == ' ')){
             return 0;
         }
     }
@@ -152,7 +130,8 @@ int validateSymptom(char *symptom){
 }
 int validateChoice(int firstChoice, int lastChoice, char *userChoice){
     if(strlen(userChoice) != 1) return 0;
-    else if(!isdigit(userChoice[0])) return 0;
+    else if(!isdigit((unsigned char)userChoice[0])) return 0;
+    else if(atoi(userChoice) < firstChoice || atoi(userChoice) > lastChoice) return 0;
     return 1;
 }
 int isPatientExist(char value[], char valueType){
@@ -166,7 +145,6 @@ int isPatientExist(char value[], char valueType){
     }
     return 0;
 }
-//cli
 void clearScreen() {
     #ifdef _WIN32
         system("cls");
@@ -186,19 +164,23 @@ int importFromFile(const char *fileName) {
     Patient p;
     patientCount = 0;
     while (1) {
-        int n = fscanf(f, " %[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|\n]", 
+        int n = fscanf(f, " %[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|\n]",
                         p.id, p.name, p.birth, p.symptom, p.doctor, p.fee, p.date);
         if (n == EOF) break;
         if (n != 7
-            || !validateID(p.id) || !validateName(p.name) || !validateDate(p.birth) || !validateSymptom(p.symptom) 
+            || !validateID(p.id) || isduplicateid(p.id) || !validateName(p.name) || !validateDate(p.birth) || !validateSymptom(p.symptom)
             || !validateName(p.doctor) || !validateFee(p.fee) || !validateDate(p.date) || cmpDate(splitDate(p.date), (splitDate(p.birth))) == -1){
             fclose(f);
+            patientCount = 0;
             return 101;
         }
         if (patientCount + 1 > MAX_PATIENT){
             fclose(f);
+            patientCount = 0;
             return 102;
         }
+        normalizeDate(p.birth);
+        normalizeDate(p.date);
         hospitalData[patientCount++] = p;
     }
     fclose(f);
@@ -209,6 +191,7 @@ int exportToFile(const char *fileName) {
     char path[MAXSTRING];
     snprintf(path, sizeof(path), "%s.txt", fileName);
     FILE *f = fopen(path, "w");
+    if (!f) return 100;
     for (int i = 0; i < patientCount; i++) {
         fprintf(f, "%s|%s|%s|%s|%s|%s|%s\n",
                 hospitalData[i].id, hospitalData[i].name,
@@ -224,7 +207,6 @@ void printError(int errorID){
         if(errorID == atoi(error[i][0])) printf("%s.\n", error[i][1]);
     }
 }
-//prompt till valid
 void promptTillValidChoice(int firstChoice, int lastChoice, int *userChoice){
     char butter[MAXSTRING];
     while(1){
@@ -238,7 +220,7 @@ void promptTillValidChoice(int firstChoice, int lastChoice, int *userChoice){
             printError(201);
             printf("Xin hay nhap lai: ");
         }
-        else if(patientCount == 0 && atoi(butter) != 1 && atoi(butter) != 4){
+        else if(patientCount == 0 && (atoi(butter) == 2 || atoi(butter) == 3 || atoi(butter) == 5 || atoi(butter) == 6 || atoi(butter) == 9)){
             printError(202);
             printf("Xin hay nhap lai: ");
         }
@@ -248,11 +230,19 @@ void promptTillValidChoice(int firstChoice, int lastChoice, int *userChoice){
         }
     }
 }
+
+void normalizeDate(char *date){
+    int d, m, y;
+    if(sscanf(date, "%d/%d/%d", &d, &m, &y) == 3){
+        snprintf(date, MAXSTRING, "%d/%d/%d", d, m, y);
+    }
+}
 void promptTillValidValue(char valueType, char *value){
     char butter[MAXSTRING];
     while(1){
     	fgets(butter, sizeof(butter), stdin);
         butter[strcspn(butter, "\n")] = '\0';
+        if(valueType == 'd' && validateDate(butter)) normalizeDate(butter);
         if(strcmp(butter,"") == 0){
             printError(200);
             printf("Xin hay nhap lai: ");
@@ -265,12 +255,17 @@ void promptTillValidValue(char valueType, char *value){
             printError(201);
             printf("Xin hay nhap lai: ");
         }
+        else if(!validateSymptom(butter) && valueType == 'y'){
+            printError(201);
+            printf("Xin hay nhap lai: ");
+        }
         else if(!validateFee(butter) && valueType == 'f'){
             printError(201);
             printf("Xin hay nhap lai: ");
         }
         else if(!validateDate(butter) && valueType == 'd'){
             printError(201);
+            printf("Ngay phai dung dinh dang d/m/yyyy.\n");
             printf("Xin hay nhap lai: ");
         }
         else{
@@ -279,15 +274,28 @@ void promptTillValidValue(char valueType, char *value){
         }
     }
 }
-// crud
 void addNewPatient(Patient p) {
     hospitalData[patientCount++] = p;
 }
 Patient createPatient(){
-    char valueType[8] = "idnnndf";
+    char valueType[8] = "idnyndf";
+    const char *label[] = {"ID","ngay sinh (d/m/yyyy)","ten","trieu chung","bac si phu trach","ngay kham (d/m/yyyy)","vien phi"};
     Patient tmp;
     char *value[] = {tmp.id,tmp.birth,tmp.name,tmp.symptom,tmp.doctor,tmp.date,tmp.fee};
-    for(int i = 0; i<7; i++) promptTillValidValue(valueType[i],value[i]);
+    for(int i = 0; i<7; i++){
+        printf("Nhap %s: ", label[i]);
+        promptTillValidValue(valueType[i],value[i]);
+        while(i == 0 && isduplicateid(tmp.id)){
+            printError(201);
+            printf("ID da ton tai. Xin hay nhap lai: ");
+            promptTillValidValue('i',tmp.id);
+        }
+        while(i == 5 && cmpDate(splitDate(tmp.date),splitDate(tmp.birth)) == -1){
+            printError(301);
+            printf("Ngay kham khong duoc truoc ngay sinh (%s). Vui long nhap lai ngay kham: ", tmp.birth);
+            promptTillValidValue('d',tmp.date);
+        }
+    }
     return tmp;
 }
 void readItemByID(char *id) {
@@ -319,6 +327,7 @@ int convertIDToIndex(char *id){
     for(int i = 0; i < patientCount; i++){
         if(strcmp(id,hospitalData[i].id) == 0) return i;
     }
+    return -1;
 }
 void readDataBase() {
     printHeader();
@@ -336,7 +345,7 @@ void updatePatientInfo(char *id, int typeChange, char *newVal) {
     char *value[] = {hospitalData[index].id,hospitalData[index].birth,hospitalData[index].name,
                     hospitalData[index].symptom,hospitalData[index].doctor,hospitalData[index].date,
                     hospitalData[index].fee};
-    snprintf(value[typeChange - 1], sizeof(value[typeChange - 1]), "%s", newVal);
+    snprintf(value[typeChange - 1], MAXSTRING, "%s", newVal);
 }
 
 void deletePatient(char *id) {
@@ -351,17 +360,16 @@ void deletePatient(char *id) {
 
 
 
-// khac
 Date splitDate(char *date){
     Date tmp;
     sscanf(date, "%d/%d/%d", &tmp.day, &tmp.month, &tmp.year);
     return tmp;
 }
 int main() {
-    char a[MAXSTRING];
     int choice;
     Patient tmp;
-    importFromFile("patientList");
+    int loadErr = importFromFile("patientList");
+    if(loadErr != 0) printError(loadErr);
     while (1) {
         printf("\n===== QUAN LY BENH NHAN =====\n");
         printf("1. Doc file\n");
@@ -379,9 +387,12 @@ int main() {
         promptTillValidChoice(0, 9, &choice);
 
         switch (choice) {
-            case 1:
-                printError(importFromFile("patientList"));
+            case 1:{
+                int err = importFromFile("patientList");
+                if(err != 0) printError(err);
+                else printf("Doc file thanh cong!\n");
                 break;
+            }
             case 2:
                 readDataBase();
                 break;
@@ -419,15 +430,20 @@ int main() {
                 break;
             }
             case 4:{
+                if(patientCount >= MAX_PATIENT){
+                    printError(102);
+                    break;
+                }
                 addNewPatient(createPatient());
                 printf("Da them benh nhan vao danh sach.\n");
                 exportToFile("patientList");
                 break;
             }
             case 5:{
-                char valueType[8] = "idnnndf";
+                char valueType[8] = "idnyndf";
                 char newValue[MAXSTRING];
 
+                printf("Nhap id benh nhan: ");
                 promptTillValidValue('i',tmp.id);
                 while(!isPatientExist(tmp.id,'i')){
                     printError(404);
@@ -438,13 +454,27 @@ int main() {
                 printf("1.id    2.ngay sinh    3.ten    4.trieu chung\n"
                         "5.bac si phu trach     6.ngay kham    7.vien phi\n"
                         "Nhap loai gia tri muon thay doi: ");
-                promptTillValidChoice(1,9,&choice);
+                promptTillValidChoice(1,7,&choice);
 
                 printf("Nhap gia tri moi: ");
                 promptTillValidValue(valueType[choice - 1], newValue);
-
+                while(choice == 1 && isduplicateid(newValue)){
+                    printError(201);
+                    printf("ID da ton tai. Vui long nhap lai: ");
+                    promptTillValidValue('i',newValue);
+                }
+                while(choice == 2 && cmpDate(splitDate(hospitalData[convertIDToIndex(tmp.id)].date),splitDate(newValue)) == -1){
+                    printError(301);
+                    printf("Vui long nhap lai: ");
+                    promptTillValidValue(valueType[choice-1],newValue);
+                }
+                while(choice == 6 && cmpDate(splitDate(hospitalData[convertIDToIndex(tmp.id)].birth),splitDate(newValue)) == 1){
+                    printError(301);
+                    printf("Vui long nhap lai: ");
+                    promptTillValidValue(valueType[choice-1],newValue);
+                }
                 updatePatientInfo(tmp.id, choice, newValue);
-                printf("Cap nhat file thanh cong");
+                printf("Cap nhat file thanh cong\n");
                 exportToFile("patientList");
                 break;
             }
@@ -465,12 +495,10 @@ int main() {
             case 7:{
                 char butter[MAXSTRING];
                 printf("Nhap ten file (.txt): ");
-                scanf("%s", butter);
-                char const *fileName = butter;
-
-                int error = exportToFile(fileName);
-                if(error != 0) printError(error);
-                else printf("Xuat file thanh cong!");
+                promptTillValidValue('s', butter);
+                int err = exportToFile(butter);
+                if(err != 0) printError(err);
+                else printf("Xuat file thanh cong!\n");
                 break;
             }
             case 8:
@@ -480,7 +508,7 @@ int main() {
             case 9: {
                 long long sum = 0;
                 for (long long i = 0;i<patientCount;i++){
-                    sum += atoi(hospitalData[i].fee);
+                    sum += atoll(hospitalData[i].fee);
                 }
                 printf("Tong vien phi cua tat ca benh nhan: %lld.\n", sum);
                 break;
@@ -490,7 +518,6 @@ int main() {
                 return 0;
         }
         printf("Nhan enter de tiep tuc...");
-        fflush(stdin);
         fgets(tmp.name,sizeof(tmp.name),stdin);
         clearScreen();
 
